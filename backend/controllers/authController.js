@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const sendToken = require('../utils/jwtToken');
 
 // Register User
 
@@ -9,11 +10,8 @@ exports.registerUser = async (req,res,next)=>{
     {
         const user = await User.create({name,email,password});
         const token = user.getJwtToken()
-        res.status(201).json({
-            success:true,
-            user,
-            token
-        });
+
+        sendToken(user,200,res);
     }
     catch(err)
     {
@@ -35,22 +33,20 @@ exports.loginUser = async (req,res,next)=>{
             throw Error("Please enter email and password");
         }
         const user = await User.findOne({email}).select('+password')
-        console.log(user);
+        console.log("User",user);
         if(!user)
         {            
             throw Error("Invalid Email");
         }
            
         const checkPassword = await user.checkPassword(password);
-        console.log(checkPassword);
         if(!checkPassword)
         {
             throw Error("Invalid Password");
         }
-        res.status(201).json({
-            success: true,
-            user
-        })
+
+        sendToken(user,200,res);
+
     }
     catch(err)
     {
@@ -59,4 +55,20 @@ exports.loginUser = async (req,res,next)=>{
             message: err.message
         })
     }
+}
+
+
+
+
+// logout the current user
+exports.logoutUser = (req,res,next)=>{
+    console.log("Logout")
+    res.cookie('token',null,{expires:new Date(Date.now()),httpOnly:true});
+    
+    res.status(201).json({
+        success: true,
+        message: 'LogOut'
+    })
+
+
 }
