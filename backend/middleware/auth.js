@@ -13,6 +13,7 @@ const User = require("../models/user");
 const isAuthenticatedUser = async (req,res,next)=>{
 
     const {token} = req.cookies;
+    console.log(token)
 
     if (!token)
     {

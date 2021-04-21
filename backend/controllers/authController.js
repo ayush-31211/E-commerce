@@ -1,5 +1,8 @@
 const User = require('../models/user');
 const sendToken = require('../utils/jwtToken');
+const sendEmail = require('../utils/sendEmail');
+const crypto = require('crypto');
+
 
 // Register User
 
@@ -9,7 +12,6 @@ exports.registerUser = async (req,res,next)=>{
     try
     {
         const user = await User.create({name,email,password});
-        const token = user.getJwtToken()
 
         sendToken(user,200,res);
     }
@@ -57,6 +59,98 @@ exports.loginUser = async (req,res,next)=>{
     }
 }
 
+
+// resetPassword /api/v1/password/reset/:token
+exports.resetPassword = async(req,res,next) =>{
+    const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+    const user = await User.findOne({
+        resetPasswordToken: req.params.id,
+        resetPasswordExpire: { $gt: Date.now()}
+    })
+
+    if(!user)
+    {
+        throw Error("Password Token is invalid");
+    }
+    
+    if(req.body.password !==req.body.confirmPassword)
+    {
+        res.status(500).json({
+            success: false,
+            message: 'Passwords not matched'
+        })
+        return 
+    }
+
+    user.password = req.body.password;
+    
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save({validateBeforeSave: false});
+
+    sendToken(user,200,res);
+
+}
+
+
+// forgotPassword /api/v1/password/forgot
+
+exports.forgotPassword = async(req,res,next) => {
+
+    if(!req.body.email)
+    {
+        res.status(500).json({
+            success: false,
+            message: 'Enter the email'
+        })
+        return
+    }
+
+    const user = await User.findOne({ email: req.body.email });
+    
+    if(!user)
+    {
+        res.status(404).json({
+            success: false,
+            message:'Email doesnot exist'
+        })
+        return
+    }   
+
+    // get JWT token
+    const resetToken = await user.generatePasswordToken();
+    await user.save({validateBeforeSave: false});
+
+    // Create Password Url
+    const URL = `${req.protocol}://${req.get('host')}/api/password/reset/${resetToken}`
+    console.log("URL",URL)
+    const message = `Your link to reset the password is\n\n${URL}\n\n If you have not requested, then please ignore the mail`;
+
+    try{
+        await sendEmail({
+            email: user.email,
+            subject: 'Ecom password recovery',
+            message
+        })
+        res.status(200).json({
+            success: true,
+            message: 'Email send to ' + user.email
+        })
+    }
+    catch(error)
+    {
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        
+        await user.save({validateBeforeSave: false});
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
 
 
 
