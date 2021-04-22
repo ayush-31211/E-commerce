@@ -10,7 +10,7 @@ const User = require("../models/user");
 
 
 
-const isAuthenticatedUser = async (req,res,next)=>{
+exports.isAuthenticatedUser = async (req,res,next)=>{
 
     const {token} = req.cookies;
     console.log(token)
@@ -28,4 +28,11 @@ const isAuthenticatedUser = async (req,res,next)=>{
 
 
 }
-module.exports = isAuthenticatedUser;
+exports.authorizedRoles = async(...roles) =>{
+    return (req,res,next)=>{
+        if(!roles.include(req.user.role)){
+            throw Error('Invalid access')
+        }
+    }
+    next();
+}

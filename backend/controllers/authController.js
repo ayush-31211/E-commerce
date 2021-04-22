@@ -154,6 +154,85 @@ exports.forgotPassword = async(req,res,next) => {
 
 
 
+// Get logged in user
+
+exports.getUserProfile = async(req,res,next) =>{
+    const user = await User.findById(req.user.id);
+
+    if(!user)
+    {
+        res.status(502).json({
+            success: false,
+            message: 'No user Found',
+        })
+        return
+    }
+    res.status(200).json({
+        success: true,
+        user
+    })
+}
+
+
+// Update Password
+
+exports.updatePassword = async(req,res,next) =>{
+    const user = await User.findById(req.user.id).select('+password')
+    const isMatched = await user.checkPassword(req.body.oldPassword);
+    if(!isMatched)
+    {
+        res.status(500).json({
+            success: false,
+            message: 'Old Password not matched'
+        })
+        return
+    }
+    user.password = req.body.password;
+    await user.save();
+    sendToken(user,201,res);
+}
+
+
+// update user profile 
+
+exports.updateProfile = async(req,res,next)=>{
+    const user = await User.findById(req.user.id);
+    if(!user)
+    {
+        
+        res.status(500).json({
+            success: false,
+            message: "User doesn't exist"
+        })
+        return
+    }
+
+    const newData = {
+        name: req.user.name,
+        email: req.email.email
+    }
+
+    //TODO: update Avatar
+
+    user = await User.findByIdAndUpdate(req.user.id,newData,{
+        new: true,
+        runValidators: true,
+        useFindAndModify: false
+    })
+
+    res.status(200).json({
+        success: true,
+        message: "User Updated",
+        user
+    })
+}
+
+
+
+
+
+
+
 // logout the current user
 exports.logoutUser = (req,res,next)=>{
     console.log("Logout")
@@ -161,8 +240,17 @@ exports.logoutUser = (req,res,next)=>{
     
     res.status(201).json({
         success: true,
-        message: 'LogOut'
+        message: 'Logout'
     })
 
 
 }
+
+
+/** 
+ * TODO:
+ * check getUserProfile works
+ * check update password
+ * check update user
+ *
+ */
