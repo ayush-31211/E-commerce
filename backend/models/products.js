@@ -77,6 +77,10 @@ const productSchema = new mongoose.Schema({
             comment:{
                 type: String,
                 required: true,
+            },
+            rating:{
+                type: Number,
+                default: 0
             }
         }
     ],

@@ -139,3 +139,77 @@ exports.deleteProduct= async(req,res,next)=>{
     })
 
 }
+
+
+// create new review /api/v1/review
+
+exports.addReview = async (req,res,next) =>{
+    const {rating, comment, productId} = req.body;
+
+    const review = { 
+        user:req.user.id,
+        name:req.user.name,
+        rating: Number(rating),
+        comment
+    };
+
+    const product = await Products. findById(productId);
+    const isReviewed = product.reviews.find( r => r.user.toString()===req.user.id.toString() )
+    if(isReviewed)
+    {
+        product.reviews.forEach( review => {
+            if(review.user.toString()===req.user.id.toString())
+            {
+                review.comment = comment;
+                review.rating = rating; 
+            }
+        });
+    }
+    else
+    {
+        product.reviews.push(review);
+        product.numOfReviews = product.reviews.length
+    }
+
+    product.rating = product.review.reduce((acc,item)=> item.rating + acc,0)/product.review.length;
+
+
+    await product.save({validateBeforeSave: false});
+    res.status(200).json({
+        success: true,
+        product
+    })
+
+
+}
+
+// get product review /api/v1/reviews
+
+exports.getReview = async(req,res,next) =>{
+    const product = await Products.findById(req.query.id);
+
+    res.status(200).json({
+        success: true,
+        reviews: product.reviews
+    })
+}
+
+
+// delete Review /api/v1/review
+exports.deleteReview = async(req,res,next) =>{
+    const product = await Products.findById(req.query.product_id);
+
+    const reviews = product.reviews.filter(review => review._id.toString()!==req.query.review.id.toString());
+    product.reviews = reviews;
+    product.rating = product.review.reduce((acc,item)=> item.rating + acc,0)/product.review.length;
+
+
+    await product.save({validateBeforeSave: false});
+
+    res.status(200).json({
+        success: true,
+        reviews: product.reviews, 
+        product
+    })
+
+}

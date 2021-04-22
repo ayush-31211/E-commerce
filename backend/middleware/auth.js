@@ -28,11 +28,11 @@ exports.isAuthenticatedUser = async (req,res,next)=>{
 
 
 }
-exports.authorizedRoles = async(...roles) =>{
+exports.authorizedRoles = (...roles) =>{
     return (req,res,next)=>{
         if(!roles.include(req.user.role)){
             throw Error('Invalid access')
         }
+        next();
     }
-    next();
 }
