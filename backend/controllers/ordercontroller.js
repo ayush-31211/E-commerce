@@ -1,4 +1,3 @@
-const order = require('../models/order');
 const Order = require('../models/order')
 const Product = require('../models/products')
 
@@ -8,16 +7,17 @@ exports.newOrder = async(req,res,next) =>{
     const {
             orderItem,
             shippingInfo,
-            itemPrice,
+            itemsPrice,
             shippingPrice,
             taxPrice,
             totalPrice,
             paymentInfo
           } = req.body;
 
+    orderItem.product = await Product.findById('6072f1b5ed896f3380cca80b')
     const order = await Order.create({orderItem,
                                         shippingInfo,
-                                        itemPrice,
+                                        itemsPrice,
                                         shippingPrice,
                                         taxPrice,
                                         totalPrice,
@@ -35,8 +35,8 @@ exports.newOrder = async(req,res,next) =>{
 // Get Single Order /api/v1/order/:id
 
 exports.getOrderById = async(req,res,next) =>{
-    const order = await (await Order.findById(req.params.id)).populated('user','name email');
-
+    const order = await Order.findById(req.params.id);
+    
     if(!order)
     {
         res.status(404).json({
@@ -45,9 +45,11 @@ exports.getOrderById = async(req,res,next) =>{
         })
         return 
     }
+    const populatedOrder = await (order).populated('user');
     res.status(200).json({
         success: true,
-        order
+        order,
+        populatedOrder
     })
 }
 
@@ -69,7 +71,7 @@ exports.myOrder = async(req,res,next) =>{
 exports.allOrder = async(req,res,next) =>{
     const orders = await Order.find();
 
-    const totalPrice = 0;
+    let totalPrice = 0;
     orders.forEach( order=>{
         totalPrice += order.totalPrice;
     })
@@ -77,6 +79,7 @@ exports.allOrder = async(req,res,next) =>{
     res.status(200).json({
         success: true,
         totalPrice,
+        length: orders.length,
         orders
     })
 }
@@ -84,7 +87,7 @@ exports.allOrder = async(req,res,next) =>{
 // Get users order /api/v1/admin/orders/:id
 
 exports.updateOrder = async(req,res,next) =>{
-    const order = await Order.find(res.params.id);
+    const order = await Order.findById(req.params.id);
 
     if(order.orderStatus=='Delivered')
     {
@@ -106,8 +109,7 @@ exports.updateOrder = async(req,res,next) =>{
 
     res.status(200).json({
         success: true,
-        totalPrice,
-        orders
+        order
     })
 }
 

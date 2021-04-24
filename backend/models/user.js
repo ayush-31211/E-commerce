@@ -56,7 +56,7 @@ userSchema.pre('save',async function(next){
 
 userSchema.methods.checkPassword = async function(enteredPassword){
     let flag = await bcrypt.compare(enteredPassword,this.password);
-    console.log(enteredPassword,flag,"Flag")
+    //console.log(enteredPassword,flag,"Flag")
     return flag; 
 }
 
@@ -64,10 +64,12 @@ userSchema.methods.checkPassword = async function(enteredPassword){
 userSchema.methods.generatePasswordToken = async function(){
     //generate token using crypto
     const resetToken = crypto.randomBytes(20).toString('hex');
-
-
+    //console.log("Reset Token",resetToken);
+    
     //hash token
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    //console.log("Hashed Token 1",hashedToken);
+    //console.log("Hashed Token 2",crypto.createHash('sha256').update(resetToken).digest('hex'));
     this.resetPasswordToken = hashedToken;
     this.resetPasswordExpire = Date.now()+30*60*1000;
     

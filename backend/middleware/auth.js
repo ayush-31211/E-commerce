@@ -13,15 +13,16 @@ const User = require("../models/user");
 exports.isAuthenticatedUser = async (req,res,next)=>{
 
     const {token} = req.cookies;
-    console.log(token)
-
+    //console.log(token)
+    
     if (!token)
     {
         throw Error("Login First");
     }
     const decode = jwt.verify(token,process.env.SECRET)
-
+    
     req.user = await User.findById(decode.id);
+    console.log("is Authenticated User")
     
     next();
 
@@ -30,7 +31,7 @@ exports.isAuthenticatedUser = async (req,res,next)=>{
 }
 exports.authorizedRoles = (...roles) =>{
     return (req,res,next)=>{
-        if(!roles.include(req.user.role)){
+        if(!roles.includes(req.user.role)){
             throw Error('Invalid access')
         }
         next();

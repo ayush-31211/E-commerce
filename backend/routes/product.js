@@ -5,7 +5,7 @@ const {newProducts,getProducts, getSingleProduct, updateProduct, deleteProduct, 
 const {isAuthenticatedUser} = require('../middleware/auth');
 
 // Get all Products
-router.route('/products').get(isAuthenticatedUser,getProducts);
+router.route('/products').get(getProducts);
 
 // Add New Product
 router.route('/admin/products/newProducts').post(newProducts);    
@@ -18,7 +18,7 @@ router.route('/admin/product/:id')
                                 .put(updateProduct)
                                 .delete(deleteProduct);    
                         
-router.route('/review').put(isAuthenticatedUser,addReview);
+router.route('/review/addreview').put(isAuthenticatedUser,addReview);
 router.route('/reviews').get(getReview);
 
                                 

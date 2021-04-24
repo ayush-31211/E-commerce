@@ -4,7 +4,7 @@ const APIFeatures = require('../utils/apiFeatures');
 // Create Products => /api/v1/products/newProducts
 
 exports.newProducts = async(req,res,next)=>{
-    console.log(req);
+    //console.log(req);
     const product = await Products.create(req.body);
     res.status(201).json({
         success: true,
@@ -50,7 +50,8 @@ exports.getSingleProduct = async(req,res,next)=>{
     {
         return res.status(400).json({
             success: false,
-            message: err.message
+            message: err.message,
+            id: req.params.id
         })
     }
     if(!product)
@@ -111,9 +112,9 @@ exports.deleteProduct= async(req,res,next)=>{
     let products;
     try{
         products = await Products.findById(req.params.id);
-        console.log("PRODUCT");
-        console.log(products);
-        console.log(typeof(products))
+        //console.log("PRODUCT");
+        //console.log(products);
+        //console.log(typeof(products))
     }
     catch(err)
     {
@@ -141,6 +142,10 @@ exports.deleteProduct= async(req,res,next)=>{
 }
 
 
+
+
+
+
 // create new review /api/v1/review
 
 exports.addReview = async (req,res,next) =>{
@@ -153,8 +158,8 @@ exports.addReview = async (req,res,next) =>{
         comment
     };
 
-    const product = await Products. findById(productId);
-    const isReviewed = product.reviews.find( r => r.user.toString()===req.user.id.toString() )
+    const product = await Products.findById(productId);
+    const isReviewed = product.reviews.find( r => {const flag=r.user.toString()===req.user.id.toString(); return flag} )
     if(isReviewed)
     {
         product.reviews.forEach( review => {
@@ -168,10 +173,9 @@ exports.addReview = async (req,res,next) =>{
     else
     {
         product.reviews.push(review);
-        product.numOfReviews = product.reviews.length
+        product.numOfReviews = product.reviews.length   
     }
-
-    product.rating = product.review.reduce((acc,item)=> item.rating + acc,0)/product.review.length;
+    product.rating = product.reviews.reduce((acc,item)=> item.rating + acc,0)/product.reviews.length;
 
 
     await product.save({validateBeforeSave: false});

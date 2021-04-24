@@ -8,10 +8,10 @@ const crypto = require('crypto');
 
 exports.registerUser = async (req,res,next)=>{
     const {name,email,password} = req.body;
-    console.log("BODY",req.body);
+    //console.log("BODY",req.body);
     try
     {
-        const user = await User.create({name,email,password});
+        const user = await User.create(req.body);
 
         sendToken(user,200,res);
     }
@@ -35,7 +35,7 @@ exports.loginUser = async (req,res,next)=>{
             throw Error("Please enter email and password");
         }
         const user = await User.findOne({email}).select('+password')
-        console.log("User",user);
+        //console.log("User",user);
         if(!user)
         {            
             throw Error("Invalid Email");
@@ -63,14 +63,19 @@ exports.loginUser = async (req,res,next)=>{
 // resetPassword /api/v1/password/reset/:token
 exports.resetPassword = async(req,res,next) =>{
     const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+    //console.log('Reset Password Token ', resetPasswordToken);
     const user = await User.findOne({
-        resetPasswordToken: req.params.id,
+        resetPasswordToken: resetPasswordToken,  
         resetPasswordExpire: { $gt: Date.now()}
     })
 
     if(!user)
     {
-        throw Error("Password Token is invalid");
+        res.status(500).json({
+            success: false,
+            message: 'User not found'
+        })
+        return 
     }
     
     if(req.body.password !==req.body.confirmPassword)
@@ -123,8 +128,8 @@ exports.forgotPassword = async(req,res,next) => {
     await user.save({validateBeforeSave: false});
 
     // Create Password Url
-    const URL = `${req.protocol}://${req.get('host')}/api/password/reset/${resetToken}`
-    console.log("URL",URL)
+    const URL = `${req.protocol}://${req.get('host')}/api/v1/password/reset/${resetToken}`
+    //console.log("URL",URL)
     const message = `Your link to reset the password is\n\n${URL}\n\n If you have not requested, then please ignore the mail`;
 
     try{
@@ -193,10 +198,11 @@ exports.updatePassword = async(req,res,next) =>{
 }
 
 
-// update user profile 
+// update user profile /api/v1/update/me
 
 exports.updateProfile = async(req,res,next)=>{
-    const user = await User.findById(req.user.id);
+    let user = await User.findById(req.user.id);
+    //console.log(user)
     if(!user)
     {
         
@@ -208,17 +214,18 @@ exports.updateProfile = async(req,res,next)=>{
     }
 
     const newData = {
-        name: req.user.name,
-        email: req.email.email
+        name: req.body.name,
+        email: req.body.email
     }
 
     //TODO: update Avatar
 
     user = await User.findByIdAndUpdate(req.user.id,newData,{
-        new: true,
+        new: true,  
         runValidators: true,
         useFindAndModify: false
     })
+    //console.log(user)
 
     res.status(200).json({
         success: true,
@@ -228,29 +235,14 @@ exports.updateProfile = async(req,res,next)=>{
 }
 
 
-
-
-
-
-
 // logout the current user
 exports.logoutUser = (req,res,next)=>{
-    console.log("Logout")
+    //console.log("Logout")
     res.cookie('token',null,{expires:new Date(Date.now()),httpOnly:true});
     
     res.status(201).json({
         success: true,
         message: 'Logout'
     })
-
-
 }
 
-
-/** 
- * TODO:
- * check getUserProfile works
- * check update password
- * check update user
- *
- */
